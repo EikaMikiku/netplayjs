@@ -29,22 +29,7 @@ export class TestWrapper {
     this.canvas.style.backgroundColor = "black";
     document.body.appendChild(this.canvas);
 
-    if (
-      this.gameClass.touchControls &&
-      window.navigator.userAgent.toLowerCase().includes("mobile")
-    ) {
-      for (let [name, control] of Object.entries(
-        this.gameClass.touchControls
-      )) {
-        control.show();
-      }
-    }
-
-    this.inputReader = new DefaultInputReader(
-      this.canvas,
-      this.gameClass.pointerLock || false,
-      this.gameClass.touchControls || {}
-    );
+    this.inputReader = new DefaultInputReader(this.canvas);
 
     this.game = new this.gameClass(this.canvas, this.players);
   }
