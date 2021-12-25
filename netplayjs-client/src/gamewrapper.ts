@@ -7,7 +7,6 @@ import Peer from "peerjs";
 
 import * as query from "query-string";
 import { doc } from "prettier";
-import * as QRCode from "qrcode";
 import { assert } from "chai";
 
 export abstract class GameWrapper {
@@ -183,11 +182,6 @@ export abstract class GameWrapper {
         // Show the join link.
         let joinURL = `${window.location.href}#room=${id}`;
         this.menu.innerHTML = `<div>Join URL (Open in a new window or send to a friend): <a href="${joinURL}">${joinURL}<div>`;
-
-        // Add a QR code for joining.
-        const qrCanvas = document.createElement("canvas");
-        this.menu.appendChild(qrCanvas);
-        QRCode.toCanvas(qrCanvas, joinURL);
 
         // Construct the players array.
         const players: Array<NetplayPlayer> = [
