@@ -6,36 +6,9 @@ export class DefaultInput extends NetplayInput<DefaultInput> {
 }
 
 export class DefaultInputReader {
-  canvas: HTMLCanvasElement;
-
   PRESSED_KEYS = {};
 
-  getCanvasScale(): { x: number; y: number } {
-    const rect = this.canvas.getBoundingClientRect();
-    return {
-      x: this.canvas.width / rect.width,
-      y: this.canvas.height / rect.height,
-    };
-  }
-
-  projectClientPosition(
-    clientX: number,
-    clientY: number
-  ): { x: number; y: number } {
-    const rect = this.canvas.getBoundingClientRect();
-    const scale = this.getCanvasScale();
-
-    return {
-      x: (clientX - rect.left) * scale.x,
-      y: (clientY - rect.top) * scale.y,
-    };
-  }
-
-  constructor(
-    canvas: HTMLCanvasElement
-  ) {
-    this.canvas = canvas;
-
+  constructor() {
     document.addEventListener(
       "keydown",
       (event) => {

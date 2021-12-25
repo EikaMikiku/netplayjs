@@ -6,5 +6,3 @@ export * from "./lockstepwrapper";
 export * from "./rollbackwrapper";
 export * from "./game";
 export * from "./json";
-
-export * from "./test-wrapper";

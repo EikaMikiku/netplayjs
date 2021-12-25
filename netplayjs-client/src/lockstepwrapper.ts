@@ -3,6 +3,7 @@ import { DefaultInput, DefaultInputReader } from "./defaultinput";
 import EWMASD from "./ewmasd";
 import { LockstepNetcode } from "./netcode/lockstep";
 import { NetplayPlayer, NetplayState } from "./types";
+import { DEV } from "./debugging";
 
 import * as log from "loglevel";
 import { GameWrapper } from "./gamewrapper";
@@ -112,7 +113,9 @@ export class LockstepWrapper extends GameWrapper {
   }
 
   startGameLoop() {
-    this.stats.style.display = "inherit";
+    if (DEV) {
+      this.stats.style.display = "inherit";
+    }
 
     // Start the netcode game loop.
     this.lockstepNetcode!.start();
@@ -122,18 +125,19 @@ export class LockstepWrapper extends GameWrapper {
       this.game!.draw(this.canvas);
 
       // Update stats
-      this.stats.innerHTML = `
-      <div>Netcode Algorithm: Lockstep</div>
-      <div>Ping: ${this.pingMeasure
-        .average()
-        .toFixed(2)} ms +/- ${this.pingMeasure.stddev().toFixed(2)} ms</div>
-      <div>Frame Number: ${this.lockstepNetcode!.frame}</div>
-      <div>Missed Frames: ${this.lockstepNetcode!.missedFrames}</div>
-
-      <div>State Syncs: ${this.lockstepNetcode!.stateSyncsSent} sent, ${
-        this.lockstepNetcode!.stateSyncsReceived
-      } received</div>
-      `;
+      if (DEV) {
+        this.stats.innerHTML = `
+          <div>Netcode Algorithm: Lockstep</div>
+          <div>Ping: ${this.pingMeasure
+            .average()
+            .toFixed(2)} ms +/- ${this.pingMeasure.stddev().toFixed(2)} ms</div>
+          <div>Frame Number: ${this.lockstepNetcode!.frame}</div>
+          <div>Missed Frames: ${this.lockstepNetcode!.missedFrames}</div>
+          <div>State Syncs: ${this.lockstepNetcode!.stateSyncsSent} sent, ${
+            this.lockstepNetcode!.stateSyncsReceived
+          } received</div>
+        `;
+      }
 
       // Request another frame.
       requestAnimationFrame(animate);

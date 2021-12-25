@@ -3,6 +3,7 @@ import { NetplayPlayer, NetplayState } from "./types";
 
 import * as log from "loglevel";
 import { GameClass } from "./game";
+import { DEV } from "./debugging";
 import Peer from "peerjs";
 
 import * as query from "query-string";
@@ -17,9 +18,6 @@ export abstract class GameWrapper {
 
   /** The network stats UI. */
   stats: HTMLDivElement;
-
-  /** The floating menu used to select a match. */
-  menu: HTMLDivElement;
 
   inputReader: DefaultInputReader;
 
@@ -44,101 +42,28 @@ export abstract class GameWrapper {
   constructor(gameClass: GameClass) {
     this.gameClass = gameClass;
 
-    // Create canvas for game.
-    this.canvas = document.createElement("canvas");
-    this.canvas.width = gameClass.canvasSize.width;
-    this.canvas.height = gameClass.canvasSize.height;
-
-    this.canvas.style.backgroundColor = "black";
-    this.canvas.style.position = "absolute";
-    this.canvas.style.zIndex = "0";
-    this.canvas.style.boxShadow = "0px 0px 10px black";
-
-    this.resize();
-    window.addEventListener("resize", () => this.resize());
-
-    document.body.appendChild(this.canvas);
+    this.canvas = this.gameClass.canvas;
 
     // Create stats UI
     this.stats = document.createElement("div");
-    this.stats.style.zIndex = "1";
-    this.stats.style.position = "absolute";
-    this.stats.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-    this.stats.style.color = "white";
-    this.stats.style.padding = "5px";
-    this.stats.style.display = "none";
+    if (DEV) {
+      this.stats.style.zIndex = "1";
+      this.stats.style.position = "absolute";
+      this.stats.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      this.stats.style.color = "white";
+      this.stats.style.padding = "5px";
+      this.stats.style.display = "none";
 
-    document.body.appendChild(this.stats);
-
-    // Create menu UI
-    this.menu = document.createElement("div");
-    this.menu.style.zIndex = "1";
-    this.menu.style.position = "absolute";
-    this.menu.style.backgroundColor = "white";
-    this.menu.style.padding = "5px";
-    this.menu.style.left = "50%";
-    this.menu.style.top = "50%";
-    this.menu.style.boxShadow = "0px 0px 10px black";
-    this.menu.style.transform = "translate(-50%, -50%)";
-
-    document.body.appendChild(this.menu);
-
-    this.inputReader = new DefaultInputReader(this.canvas);
-  }
-
-  /**
-   * Calculate a scaling for our canvas so that it fits the whole screen.
-   * Center the canvas with an offset.
-   */
-  calculateLayout(
-    container: { width: number; height: number },
-    canvas: { width: number; height: number }
-  ): { width: number; height: number; left: number; top: number } {
-    const widthRatio = container.width / canvas.width;
-    const heightRatio = container.height / canvas.height;
-
-    // We are constrained by the height of the canvas.
-    const heightLimited = canvas.width * heightRatio >= container.width;
-
-    const ratio = heightLimited ? widthRatio : heightRatio;
-
-    let width = canvas.width * ratio;
-    let height = canvas.height * ratio;
-
-    let left = 0;
-    let top = 0;
-
-    if (heightLimited) {
-      top = container.height / 2 - height / 2;
-    } else {
-      left = container.width / 2 - width / 2;
+      document.body.appendChild(this.stats);
     }
 
-    return { width, height, left, top };
-  }
-
-  /**
-   * Recalculate canvas scaling / offset.
-   */
-  resize() {
-    const layout = this.calculateLayout(
-      { width: window.innerWidth, height: window.innerHeight },
-      this.gameClass.canvasSize
-    );
-    log.debug("Calculating new layout: %o", layout);
-
-    this.canvas.style.width = `${layout.width}px`;
-    this.canvas.style.height = `${layout.height}px`;
-
-    this.canvas.style.top = `${layout.top}px`;
-    this.canvas.style.left = `${layout.left}px`;
+    this.inputReader = new DefaultInputReader();
   }
 
   peer?: Peer;
 
   start() {
     log.info("Creating a PeerJS instance.");
-    this.menu.innerHTML = "Connecting to PeerJS...";
 
     this.peer = new Peer();
     this.peer.on("error", (err) => console.error(err));
@@ -151,8 +76,6 @@ export abstract class GameWrapper {
 
       if (isClient) {
         // We are a client, so connect to the room from the hash.
-        this.menu.style.display = "none";
-
         log.info(`Connecting to room ${parsedHash.room}.`);
 
         const conn = this.peer!.connect(parsedHash.room as string, {
@@ -180,8 +103,9 @@ export abstract class GameWrapper {
         log.info("Showing join link.");
 
         // Show the join link.
-        let joinURL = `${window.location.href}#room=${id}`;
-        this.menu.innerHTML = `<div>Join URL (Open in a new window or send to a friend): <a href="${joinURL}">${joinURL}<div>`;
+        if (this.gameClass.onURL) {
+          this.gameClass.onURL(`${window.location.href}#room=${id}`);
+        }
 
         // Construct the players array.
         const players: Array<NetplayPlayer> = [
@@ -191,8 +115,6 @@ export abstract class GameWrapper {
 
         // Wait for a connection from a client.
         this.peer!.on("connection", (conn) => {
-          // Make the menu disappear.
-          this.menu.style.display = "none";
           conn.on("error", (err) => console.error(err));
 
           this.startHost(players, conn);
